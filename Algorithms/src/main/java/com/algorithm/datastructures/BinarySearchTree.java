@@ -1,306 +1,232 @@
 package com.algorithm.datastructures;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 /**
- * Class to implement a binary search tree containing insert, find, remove, and
- * traverse functionality.
+ * An implementation of binary trees
+ * @author morin
+ *
+ * @param <Node>
  */
-public class BinarySearchTree {
-	/**
-	 * Node instance to hold the root of the tree.
-	 */
-	Node root;
-
-	/**
-	 * Used to add new nodes into the tree.
-	 * 
-	 * @param key
-	 *            the key to be added to the tree
-	 * @param value
-	 *            the name (or value) of the key
-	 */
-	public void addNode(int key, String value) {
-		Node newNode = new Node(key, value);
-
-		if (root == null) {
-			// If there is no root, create one
-			root = newNode;
-			System.out.println("Inserted key " + newNode.key + " as the root.");
-		} else { // If root exists, traverse the tree
-			// Create a focus node for checking
-			Node focusNode = root;
-			// Create a parent node
-			Node parent;
-			while (true) { // Every time through the loop, set parent to
-							// focusNode
-				parent = focusNode;
-				// If the key is less than the current key, move left
-				if (key < focusNode.key) {
-					// Check set the focusNode equal to it's left child and
-					// check if it's null
-					focusNode = focusNode.leftChild;
-					if (focusNode == null) { // If it is, then create the new
-												// node in the tree
-						parent.leftChild = newNode;
-						System.out.println("Inserted key " + newNode.key);
-						return;
-					} // If not, repeat the loop
-				} else if (key > focusNode.key) { // If the key is greater, move
-													// right
-					focusNode = focusNode.rightChild;
-					if (focusNode == null) { // If no node exists in that
-												// location, create it
-						parent.rightChild = newNode;
-						System.out.println("Inserted key " + newNode.key);
-						return;
-					}
-				} else {
-					System.out.println("Could not insert duplicate entry.");
-					return;
-				}
-			}
-		}
+public class BinaryTree<Node extends BinaryTree.BTNode<Node>> {
+	
+	public static class BTNode<Node extends BTNode<Node>> {
+		public Node left;
+		public Node right;
+		public Node parent;	
 	}
 
 	/**
-	 * Performs and outputs an in-order traversal on the tree.
-	 * 
-	 * @param focusNode
-	 *            the specified node to perform the search from.
+	 * Used to make a mini-factory
 	 */
-	public void inOrderTraversal(Node focusNode) {
-		if (focusNode != null) {
-			inOrderTraversal(focusNode.leftChild);
-			System.out.print(focusNode + " ");
-			inOrderTraversal(focusNode.rightChild);
-		}
+	protected Node sampleNode;
+	
+	/**
+	 * The root of this tree
+	 */
+	protected Node r;
+
+	/**
+	 * This tree's "null" node
+	 */
+	protected Node nil;
+
+	/**
+	 * Create a new instance of this class
+	 * @param sampleNode - a sample of a node that can be used
+	 * to create a new node in newNode()
+	 * @param nil - a node that will be used in place of null
+	 */
+	public BinaryTree(Node sampleNode, Node nil) {
+		this.sampleNode = sampleNode;
+		this.nil = nil;
+		r = nil;
 	}
 
 	/**
-	 * Performs and outputs a pre-order traversal on the tree.
-	 * 
-	 * @param focusNode
-	 *            the specified node to perform the search from.
+	 * Create a new instance of this class
+	 * @param sampleNode - a sample of a node that can be used
+	 * to create a new node in newNode()
 	 */
-	public void preOrderTraversal(Node focusNode) {
-		if (focusNode != null) {
-			System.out.print(focusNode + " ");
-			preOrderTraversal(focusNode.leftChild);
-			preOrderTraversal(focusNode.rightChild);
+	public BinaryTree(Node sampleNode) {
+		this.sampleNode = sampleNode;
+	}
+	
+	/**
+	 * Allocate a new node for use in this tree
+	 * @return
+	 */
+	@SuppressWarnings({"unchecked"})
+	protected Node newNode() {
+		try {
+			Node u = (Node)sampleNode.getClass().newInstance();
+			u.parent = u.left = u.right = nil;
+			return u;
+		} catch (Exception e) {
+			return null;
 		}
 	}
-
+	
 	/**
-	 * Performs and outputs a post-order traversal on the tree.
-	 * 
-	 * @param focusNode
-	 *            the specified node to perform the search from.
+	 * Compute the depth (distance to the root) of u
+	 * @param u
+	 * @return the distanct between u and the root, r
 	 */
-	public void postOrderTraversal(Node focusNode) {
-		if (focusNode != null) {
-			postOrderTraversal(focusNode.leftChild);
-			postOrderTraversal(focusNode.rightChild);
-			System.out.print(focusNode + " ");
+	public int depth(Node u) {
+		int d = 0;
+		while (u != r) {
+			u = u.parent;
+			d++;
 		}
+		return d;
 	}
-
+	
 	/**
-	 * Performs and outputs a reverse in-order traversal on the tree.
-	 * 
-	 * @param focusNode
-	 *            the specified node to perform the search from.
+	 * Compute the size (number of nodes) of this tree
+	 * @warning uses recursion so could cause a stack overflow
+	 * @return the number of nodes in this tree
 	 */
-	public void reverseInOrderTraversal(Node focusNode) {
-		if (focusNode != null) {
-			reverseInOrderTraversal(focusNode.rightChild);
-			System.out.print(focusNode + " ");
-			reverseInOrderTraversal(focusNode.leftChild);
-		}
+	public int size() {
+		return size(r);
 	}
-
+	
 	/**
-	 * Removes a specified node from the tree
-	 * 
-	 * @param key
-	 *            the key of the node to be removed.
-	 * @return true if the node was removed, false if it was not found.
+	 * @return the size of the subtree rooted at u
 	 */
-	public boolean remove(int key) {
-		Node focusNode = root;
-		Node parent = root;
-
-		boolean isItALeftChild = true;
-
-		// Search for the specified key
-		while (focusNode.key != key) { // While a match hasn't been found
-			parent = focusNode;
-			if (key < focusNode.key) { // Check if it goes left or right
-				isItALeftChild = true;
-				focusNode = focusNode.leftChild;
+	protected int size(Node u) {
+		if (u == nil) return 0;
+		return 1 + size(u.left) + size(u.right);
+	}
+	
+	/**
+	 * Compute the number of nodes in this tree without recursion
+	 * @return
+	 */
+	public int size2() {
+		Node u = r, prev = nil, next;
+		int n = 0;
+		while (u != nil) {
+			if (prev == u.parent) {
+				n++;
+				if (u.left != nil) next = u.left;
+				else if (u.right != nil) next = u.right;
+				else next = u.parent;
+			} else if (prev == u.left) {
+				if (u.right != nil) next = u.right;
+				else next = u.parent;
 			} else {
-				isItALeftChild = false;
-				focusNode = focusNode.rightChild;
+				next = u.parent;
 			}
-			// If no match was found return false
-			if (focusNode == null)
-				return false;
+			prev = u;
+			u = next;
 		}
-		// Otherwise, continue...
-
-		// Handle if it does not have children
-		if (focusNode.leftChild == null && focusNode.rightChild == null) {
-			if (focusNode == root) {
-				root = null; // If it is the root, delete the root
-			} // If it is a left child, delete its parent's left child (itself)
-			else if (isItALeftChild) {
-				parent.leftChild = null;
-			} else { // Same with right
-				parent.rightChild = null;
-			}
-
-		}
-
-		// Handle if it only has a left child
-		else if (focusNode.rightChild == null) {
-			if (focusNode == root) {
-				root = focusNode.leftChild;
-			} else if (isItALeftChild) {
-				parent.leftChild = focusNode.leftChild;
-			} else {
-				parent.rightChild = focusNode.leftChild;
-			}
-		}
-
-		// Handle if it only has a right child
-		else if (focusNode.leftChild == null) {
-			if (focusNode == root) {
-				root = focusNode.rightChild;
-			} else if (isItALeftChild) {
-				parent.leftChild = focusNode.rightChild;
-			} else {
-				parent.rightChild = focusNode.rightChild;
-			}
-		}
-
-		// If the node has two children
-		else {
-			Node replacement = getReplacementNode(focusNode);
-
-			if (focusNode == root) {
-				root = replacement;
-			} else if (isItALeftChild) {
-				parent.leftChild = replacement;
-			} else {
-				parent.rightChild = replacement;
-			}
-
-			replacement.leftChild = focusNode.leftChild;
-		}
-		System.out.println("Removed key " + key + ".");
-		return true;
+		return n;
 	}
 
 	/**
-	 * Used in the remove method to determine the replacement node when the node
-	 * to be removed has two children.
-	 * 
-	 * @param replacedNode
-	 *            the node to be replaced.
-	 * @return the replacement node.
+	 * Compute the maximum depth of any node in this tree
+	 * @return the maximum depth of any node in this tree
 	 */
-	private Node getReplacementNode(Node replacedNode) {
+	public int height() {
+		return height(r);
+	}
+	
+	/**
+	 * @return the size of the subtree rooted at u
+	 */
+	protected int height(Node u) {
+		if (u == nil) return -1;
+		return 1 + Math.max(height(u.left), height(u.right));
+	}
 
-		Node replacementParent = replacedNode;
-		Node replacement = replacedNode;
-
-		Node focusNode = replacedNode.rightChild;
-
-		while (focusNode != null) {
-			replacementParent = replacement;
-			replacement = focusNode;
-			focusNode = focusNode.leftChild;
-		}
-
-		if (replacement != replacedNode.rightChild) {
-			replacementParent.leftChild = replacement.rightChild;
-			replacement.rightChild = replacedNode.rightChild;
-		}
-
-		return replacement;
+	
+	/**
+	 * @return
+	 */
+	public boolean isEmpty() {
+		return r == nil;
+	}
+	
+	/**
+	 * Make this tree into the empty tree
+	 */
+	public void clear() {
+		r = nil;
+	}
+	
+	/**
+	 * Demonstration of a recursive traversal
+	 * @param u
+	 */
+	public void traverse(Node u) {
+		if (u == nil) return;
+		traverse(u.left);
+		traverse(u.right);
 	}
 
 	/**
-	 * Method used to find a specified node in the tree.
-	 * 
-	 * @param key
-	 *            the specified node to search for.
-	 * @return the node if it is found, or null if it isn't.
+	 * Demonstration of a non-recursive traversal
 	 */
-	public Node findNode(int key) {
-		Node focusNode = root;
-
-		while (focusNode.key != key) {
-			if (key < focusNode.key) {
-				focusNode = focusNode.rightChild;
+	public void traverse2() {
+		Node u = r, prev = nil, next;
+		while (u != nil) {
+			if (prev == u.parent) {
+				if (u.left != nil) next = u.left;
+				else if (u.right != nil) next = u.right;
+				else next = u.parent;
+			} else if (prev == u.left) {
+				if (u.right != nil) next = u.right;
+				else next = u.parent;
 			} else {
-				focusNode = focusNode.rightChild;
+				next = u.parent;
 			}
-
-			if (focusNode == null) {
-				System.out.println("A match was not found.");
-				return null;
-			}
+			prev = u;
+			u = next;
 		}
-
-		System.out.println("A match was found!");
-		return focusNode;
 	}
 
-	public static void main(String[] args) {
-		BinarySearchTree bst = new BinarySearchTree();
-		bst.addNode(1, "1");
-		bst.addNode(2, "2");
-		bst.addNode(3, "3");
-		bst.addNode(4, "4");
-		bst.addNode(5, "5");
-		bst.addNode(6, "6");
-		bst.addNode(7, "7");
-		bst.addNode(8, "8");
-		System.out.println("\nStarting in-order traversal...");
-		bst.inOrderTraversal(bst.root);
-
-		System.out.println("\n\nStarting pre-order traversal...");
-		bst.preOrderTraversal(bst.root);
-
-		System.out.println("\n\nStarting post-order traversal...");
-		bst.postOrderTraversal(bst.root);
-
-		System.out.println("\n\nStarting reverse-order traversal...");
-		bst.reverseInOrderTraversal(bst.root);
-		System.out.println("\n");
-
-		System.out.println(bst.findNode(7));
-
-		bst.remove(7);
-		bst.inOrderTraversal(bst.root);
-
+	/**
+	 * Demonstration of a breadth-first traversal
+	 */
+	public void bfTraverse() {
+		Queue<Node> q = new LinkedList<Node>();
+		if (r != nil) q.add(r);
+		while (!q.isEmpty()) {
+			Node u = q.remove();
+			if (u.left != nil) q.add(u.left);
+			if (u.right != nil) q.add(u.right);
+		}
 	}
 
-}
-
-class Node {
-
-	int key;
-	String value;
-
-	Node leftChild;
-	Node rightChild;
-
-	Node(int key, String value) {
-		this.key = key;
-		this.value = value;
+	/**
+	 * Find the first node in an in-order traversal
+	 * @return the first node reported in an in-order traversal
+	 */
+	public Node firstNode() {
+		Node w = r;
+		if (w == nil) return nil;
+		while (w.left != nil)
+			w = w.left;
+		return w;
+	}
+	
+	/**
+	 * Find the node that follows w in an in-order traversal
+	 * @param w
+	 * @return the node that follows w in an in-order traversal
+	 */
+	public Node nextNode(Node w) {
+		if (w.right != nil) {
+			w = w.right;
+			while (w.left != nil)
+				w = w.left;
+		} else {
+			while (w.parent != nil && w.parent.left != w)
+				w = w.parent;
+			w = w.parent;
+		}
+		return w;
 	}
 
-	public String toString() {
-		return "" + key;
-	}
 }
